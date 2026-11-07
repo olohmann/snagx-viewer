@@ -1,0 +1,169 @@
+name: SnagxViewer
+options:
+  bundleIdPrefix: com.olohmann
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+  groupSortPosition: top
+
+packages:
+  SnagxCore:
+    path: SnagxCore
+  ArgumentParser:
+    url: https://github.com/apple/swift-argument-parser.git
+    from: 1.8.0
+
+settings:
+  base:
+    DEVELOPMENT_TEAM: QCRM9T8GD4
+    CODE_SIGN_STYLE: Manual
+    PROVISIONING_PROFILE_SPECIFIER: ""
+    ENABLE_HARDENED_RUNTIME: YES
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEAD_CODE_STRIPPING: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+  configs:
+    Debug:
+      CODE_SIGN_IDENTITY: Apple Development
+    Release:
+      CODE_SIGN_IDENTITY: Developer ID Application
+      CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
+      OTHER_CODE_SIGN_FLAGS: --timestamp
+
+targets:
+  SnagxViewer:
+    type: application
+    platform: macOS
+    sources:
+      - App/SnagxViewer
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.olohmann.SnagxViewer
+        PRODUCT_NAME: SnagxViewer
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    info:
+      path: App/SnagxViewer/Info.plist
+      properties:
+        CFBundleDisplayName: Snagx Viewer
+        LSApplicationCategoryType: public.app-category.graphics-design
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Snagit Capture File
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes: [com.techsmith.snagx]
+        UTImportedTypeDeclarations:
+          - UTTypeIdentifier: com.techsmith.snagx
+            UTTypeDescription: Snagit Capture File
+            UTTypeConformsTo: [public.image, public.data]
+            UTTypeTagSpecification:
+              public.filename-extension: [snagx]
+    entitlements:
+      path: App/SnagxViewer/SnagxViewer.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.files.user-selected.read-write: true
+    dependencies:
+      - package: SnagxCore
+        product: SnagxKit
+      - target: SnagxQuickLook
+        embed: true
+        codeSign: true
+      - target: SnagxThumbnail
+        embed: true
+        codeSign: true
+      - target: snagx-export
+        embed: true
+        codeSign: true
+        copy:
+          destination: executables
+
+  SnagxQuickLook:
+    type: app-extension
+    platform: macOS
+    sources:
+      - App/SnagxQuickLook
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.olohmann.SnagxViewer.QuickLook
+        PRODUCT_NAME: SnagxQuickLook
+    info:
+      path: App/SnagxQuickLook/Info.plist
+      properties:
+        CFBundleDisplayName: Snagx Viewer Preview
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.quicklook.preview
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).PreviewProvider
+          NSExtensionAttributes:
+            QLIsDataBasedPreview: true
+            QLSupportsSearchableItems: false
+            QLSupportedContentTypes: [com.techsmith.snagx]
+    entitlements:
+      path: App/SnagxQuickLook/SnagxQuickLook.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.files.user-selected.read-only: true
+    dependencies:
+      - package: SnagxCore
+        product: SnagxKit
+      - sdk: Quartz.framework
+
+  SnagxThumbnail:
+    type: app-extension
+    platform: macOS
+    sources:
+      - App/SnagxThumbnail
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.olohmann.SnagxViewer.Thumbnail
+        PRODUCT_NAME: SnagxThumbnail
+    info:
+      path: App/SnagxThumbnail/Info.plist
+      properties:
+        CFBundleDisplayName: Snagx Viewer Thumbnail
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.quicklook.thumbnail
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ThumbnailProvider
+          NSExtensionAttributes:
+            QLThumbnailMinimumDimension: 0
+            QLSupportedContentTypes: [com.techsmith.snagx]
+    entitlements:
+      path: App/SnagxThumbnail/SnagxThumbnail.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.files.user-selected.read-only: true
+    dependencies:
+      - package: SnagxCore
+        product: SnagxKit
+      - sdk: QuickLookThumbnailing.framework
+
+  snagx-export:
+    type: tool
+    platform: macOS
+    sources:
+      - SnagxCore/Sources/snagx-export
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.olohmann.SnagxViewer.snagx-export
+        PRODUCT_NAME: snagx-export
+        SKIP_INSTALL: YES
+        ENTITLEMENTS_REQUIRED: NO
+        GENERATE_INFOPLIST_FILE: YES
+        CREATE_INFOPLIST_SECTION_IN_BINARY: YES
+    dependencies:
+      - package: SnagxCore
+        product: SnagxKit
+      - package: ArgumentParser
+        product: ArgumentParser
+
+schemes:
+  SnagxViewer:
+    build:
+      targets:
+        SnagxViewer: all
+    run:
+      config: Debug
+    archive:
+      config: Release
